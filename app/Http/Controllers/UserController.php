@@ -75,10 +75,22 @@ class UserController extends Controller
     }
 
     public function destroy($id)
-    {
-        $user = User::findOrFail($id);  // Menemukan pengguna berdasarkan ID
-        $user->delete();  // Menghapus pengguna
-
-        return redirect()->route('Pengguna.index')->with('success', 'User berhasil dihapus');
+{
+    $user = User::findOrFail($id);
+    
+    // Cek apakah user memiliki pelatihan
+    if($user->pelatihan()->exists()) {
+        return redirect()->route('Pengguna.index')
+            ->with('error', 'User tidak dapat dihapus karena masih memiliki data pelatihan terkait.');
     }
+    
+    try {
+        $user->delete();
+        return redirect()->route('Pengguna.index')
+            ->with('success', 'User berhasil dihapus');
+    } catch (\Exception $e) {
+        return redirect()->route('Pengguna.index')
+            ->with('error', 'Gagal menghapus user karena masih memiliki data terkait.');
+    }
+}
 }

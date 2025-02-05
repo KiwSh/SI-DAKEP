@@ -6,7 +6,7 @@
     <title>Login | SI Data Pegawai</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- Tambahkan SweetAlert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- SweetAlert -->
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -71,41 +71,43 @@
                 <div class="col-md-6 card-right">
                     <h3 class="login-title">Login</h3>
 
+                    <!-- Notifikasi Laravel -->
                     @if (session('success'))
-                    <script>
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil!',
-                            text: "{{ session('success') }}",
-                            confirmButtonColor: '#3085d6',
-                            confirmButtonText: 'OK'
-                        });
-                    </script>
+                        <script>
+                            console.log("Notifikasi sukses muncul");
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: "{{ session('success') }}",
+                                confirmButtonColor: '#3085d6',
+                                confirmButtonText: 'OK'
+                            });
+                        </script>
                     @endif
 
                     @if (session('error'))
-                    <script>
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal!',
-                            text: "{{ session('error') }}",
-                            confirmButtonColor: '#d33',
-                            confirmButtonText: 'OK'
-                        });
-                    </script>
+                        <script>
+                            console.log("Notifikasi error muncul");
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal Login!',
+                                text: "{{ session('error') }}",
+                                confirmButtonColor: '#d33'
+                            });
+                        </script>
                     @endif
 
                     @if(session('auto_logout'))
-                    <script>
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Logout Otomatis',
-                            text: 'Anda telah keluar karena tidak ada aktivitas selama 15 menit!',
-                            confirmButtonColor: '#3085d6',
-                            confirmButtonText: 'OK'
-                        });
-                    </script>
-                    @php session()->forget('auto_logout'); @endphp
+                        <script>
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Logout Otomatis',
+                                text: 'Anda telah keluar karena tidak ada aktivitas selama 15 menit!',
+                                confirmButtonColor: '#3085d6',
+                                confirmButtonText: 'OK'
+                            });
+                        </script>
+                        @php session()->forget('auto_logout'); @endphp
                     @endif
 
                     <form method="POST" action="{{ route('login.post') }}" id="loginForm">
@@ -135,18 +137,62 @@
     <!-- Tambahkan link ke Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    
+
     <script>
-        // Tambahkan event listener untuk form submission
         document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const captchaResponse = grecaptcha.getResponse();
             const spinner = document.querySelector('.spinner-border');
             const buttonText = document.querySelector('.button-text');
             const loginButton = document.getElementById('loginButton');
-            
+
+            // Reset tombol jika sebelumnya gagal
+            spinner.style.display = 'none';
+            loginButton.disabled = false;
+            buttonText.textContent = 'Login';
+
+            // Validasi jika username atau password kosong
+            if (username === "" || password === "") {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Kolom Kosong!',
+                    text: 'Harap isi username dan password!',
+                    confirmButtonColor: '#f39c12'
+                });
+                e.preventDefault();
+                return;
+            }
+
+            // Validasi reCAPTCHA
+            if (!captchaResponse) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Verifikasi Gagal!',
+                    text: 'Harap verifikasi bahwa Anda bukan robot!',
+                    confirmButtonColor: '#d33'
+                });
+                e.preventDefault();
+                return;
+            }
+
+            // Jika validasi lolos, aktifkan spinner dan nonaktifkan tombol
             spinner.style.display = 'inline-block';
             loginButton.disabled = true;
             buttonText.textContent = 'Loading...';
         });
+
+        // Debugging untuk notifikasi session
+        @if (session('error'))
+            console.log("Session error terdeteksi di Laravel");
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Login!',
+                text: "{{ session('error') }}",
+                confirmButtonColor: '#d33'
+            });
+        @endif
     </script>
+
 </body>
 </html>

@@ -18,7 +18,7 @@
             @foreach ($models as $log)
                 <tr>
                     <td>{{ $loop->iteration }}</td>
-                    <td>{{ $log->causer->nama_user ?? 'Sistem' }}</td>
+                    <td>{{ $log->causer->nama_user ?? 'Sistem' }} - {{ $log->causer->role ?? 'System' }}</td>
                     <td>{{ $log->event }}</td>
                     <td>
                         @if(isset($log->changes['old']))

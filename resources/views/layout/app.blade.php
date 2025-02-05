@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="description" content="">
   <meta name="author" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SB Admin 2 - Dashboard</title>
   <!-- Custom fonts for this template-->
   <link href="{{ asset('admin_assets/vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
@@ -16,6 +17,9 @@
 
   <!-- Tambahkan CSS Toastr -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.9/dist/sweetalert2.min.css" rel="stylesheet">
+
   
 </head>
 <body id="page-top">
@@ -78,6 +82,7 @@
   <script src="{{ asset('admin_assets/js/sb-admin-2.min.js') }}"></script>
   <!-- Page level plugins -->
   <script src="{{ asset('admin_assets/vendor/chart.js/Chart.min.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.9/dist/sweetalert2.min.js"></script>
 
   <!-- Tambahkan JS Toastr -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
@@ -115,11 +120,11 @@
             console.error('Gagal memperbarui sesi.');
         });
 
-        // Mulai ulang timer logout otomatis
-        timeout = setTimeout(() => {
-            alert('Anda terkena logout otomatis karena tidak ada aktivitas selama 15 menit.');
-            document.getElementById('logout-form').submit();
-        }, 900000); // 15 menit dalam milidetik
+        // // Mulai ulang timer logout otomatis
+        // timeout = setTimeout(() => {
+        //     alert('Anda terkena logout otomatis karena tidak ada aktivitas selama 15 menit.');
+        //     document.getElementById('logout-form').submit();
+        // }, 900000); // 15 menit dalam milidetik
     }
 
     // Jalankan resetActivityTimer saat ada aktivitas

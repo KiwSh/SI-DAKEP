@@ -2,38 +2,38 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Models\User;
 use App\Models\Jabatan;
 use App\Models\Pegawai;
+use App\Models\Pelatihan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-
-
+use Carbon\Carbon;
 
 class DataPegawaiController extends Controller
 {
     public function index(Request $request)
-{
-    $search = $request->input('search');
+    {
+        $search = $request->input('search');
 
-    $pegawais = Pegawai::with('jabatan')
-        ->when($search, function ($query, $search) {
-            $query->where('nama', 'like', "%{$search}%")
-                ->orWhere('nik', 'like', "%{$search}%")
-                ->orWhere('mulai_kerja', 'like', "%{$search}%")
-                ->orWhereHas('jabatan', function ($q) use ($search) {
-                    $q->where('nama_jabatan', 'like', "%{$search}%");
-                });
-        })
-        ->get();
+        $pegawais = Pegawai::with('jabatan')
+            ->when($search, function ($query, $search) {
+                $query->where('nama', 'like', "%{$search}%")
+                    ->orWhere('nik', 'like', "%{$search}%")
+                    ->orWhere('mulai_kerja', 'like', "%{$search}%")
+                    ->orWhereHas('jabatan', function ($q) use ($search) {
+                        $q->where('nama_jabatan', 'like', "%{$search}%");
+                    });
+            })
+            ->paginate(5);
 
-    return view('pages.datapegawai', compact('pegawais'));
-}
-
-
-
+        return view('pages.datapegawai', compact('pegawais'));
+    }
 
     public function create()
     {
@@ -41,33 +41,34 @@ class DataPegawaiController extends Controller
         return view('pages.createpegawai', compact('jabatans'));
     }
 
-        public function store(Request $request)
-    {
-        try {
-            $request->validate([
-                'nik' => 'required|string|unique:pegawais',
-                'nama' => 'required|string|max:255',
-                'tanggal_lahir' => 'required|date',
-                'alamat' => 'required|string',
-                'jabatans_id' => 'required|exists:jabatans,id',
-                'mulai_kerja' => 'required|date',
-                'lama_kerja' => 'required|integer|min:1|max:30',
-                'foto' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            ], [
-                'required' => ':attribute wajib diisi.',
-                'unique' => ':attribute sudah terdaftar.',
-                'exists' => ':attribute tidak valid.',
-                'date' => ':attribute harus berupa tanggal yang valid.',
-                'integer' => ':attribute harus berupa angka.',
-                'min' => ':attribute minimal :min.',
-                'max' => ':attribute maksimal :max.',
-                'image' => ':attribute harus berupa gambar.',
-                'mimes' => ':attribute harus berformat jpeg, png, atau jpg.',
-                'foto.max' => 'Ukuran foto tidak boleh lebih dari 2MB.',
-            ]);
+    public function store(Request $request)
+{
+    // Mulai transaksi
+    DB::beginTransaction();
 
-            // Mulai database transaction
-        DB::beginTransaction();
+    try {
+        // Validasi manual menggunakan Validator
+        $validator = Validator::make($request->all(), [
+            'nik' => 'required|digits:16|unique:pegawais', // Validasi NIK 16 digit
+            'nama' => 'required|string|regex:/^[a-zA-Z\s]+$/|max:255', // Validasi nama hanya boleh huruf dan spasi
+            'tanggal_lahir' => 'required|date',
+            'alamat' => 'required|string',
+            'jabatans_id' => 'required|exists:jabatans,id',
+            'mulai_kerja' => 'required|date',
+            'lama_kerja' => 'required|integer|min:1|max:30',
+            'foto' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        // Cek apakah validasi gagal
+        if ($validator->fails()) {
+            // Mengembalikan input dan error message jika validasi gagal
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        // Menangani file foto
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('uploads', 'public');
+        }
 
         // Buat data pegawai
         $pegawai = new Pegawai();
@@ -79,15 +80,12 @@ class DataPegawaiController extends Controller
         $pegawai->mulai_kerja = $request->mulai_kerja;
         $pegawai->lama_kerja = $request->lama_kerja;
 
-        // Hitung selesai kerja menggunakan Carbon
-        $mulaiKerja = \Carbon\Carbon::parse($request->mulai_kerja);
+        // Hitung selesai kerja
+        $mulaiKerja = Carbon::parse($request->mulai_kerja);
         $pegawai->selesai_kerja = $mulaiKerja->addYears((int) $request->lama_kerja)->format('Y-m-d');
 
         // Simpan foto
-        if ($request->hasFile('foto')) {
-            $fotoPath = $request->file('foto')->store('uploads', 'public');
-            $pegawai->foto = $fotoPath;
-        }
+        $pegawai->foto = $fotoPath ?? null;
 
         $pegawai->save();
 
@@ -103,81 +101,60 @@ class DataPegawaiController extends Controller
         // Commit transaksi
         DB::commit();
 
-        return redirect()
-            ->route('pegawai.data.index')
-            ->with('success', 'Data pegawai berhasil disimpan. Akun user telah dibuat.');
-
-    } catch (ValidationException $e) {
-        // Rollback transaksi jika validasi gagal
+        return redirect()->route('pegawai.data.index')->with('success', 'Data berhasil disimpan!');
+    } catch (Exception $e) {
+        // Rollback transaksi jika ada error
         DB::rollBack();
-
-        return redirect()
-            ->back()
-            ->withErrors($e->validator)
-            ->withInput()
-            ->with('error', 'Form Data Harus Terisi Semua. Silakan periksa kembali data yang diinput.');
-    } catch (\Exception $e) {
-        // Rollback transaksi jika terjadi kesalahan
-        DB::rollBack();
-
+        Log::error('Error: ' . $e->getMessage());
         return redirect()
             ->back()
             ->withInput()
-            ->with('error', 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage());
+            ->with('error', "Terjadi kesalahan: form wajib di isi semua ");
     }
 }
 
-// Method helper untuk generate username unik
-private function generateUniqueUsername($nama, $nik)
-{
-    // Buat base username dari nama dan NIK
-    $baseUsername = strtolower(str_replace(' ', '', $nama)) . $nik;
-    $username = $baseUsername;
     
-    // Cek apakah username sudah ada
-    $count = 1;
-    while (User::where('username', $username)->exists()) {
-        $username = $baseUsername . $count;
-        $count++;
-    }
-    
-    return $username;
-}
 
+    private function generateUniqueUsername($nama, $nik)
+    {
+        $baseUsername = strtolower(str_replace(' ', '', $nama)) . $nik;
+        $username = $baseUsername;
+        
+        $count = 1;
+        while (User::where('username', $username)->exists()) {
+            $username = $baseUsername . $count;
+            $count++;
+        }
+        
+        return $username;
+    }
 
     public function edit($id)
     {
         $pegawai = Pegawai::findOrFail($id);
-        $jabatans = Jabatan::all(); // Ambil semua data jabatan untuk dropdown
+        $jabatans = Jabatan::all();
         return view('pages.editpegawai', compact('pegawai', 'jabatans'));
     }
 
     public function update(Request $request, $id)
     {
+        // Mulai transaksi
+        DB::beginTransaction();
+
         try {
             $pegawai = Pegawai::findOrFail($id);
 
             $request->validate([
-                'nik' => 'required|string|unique:pegawais,nik,' . $id,
-                'nama' => 'required|string|max:255',
+                'nik' => 'required|digits:16|unique:pegawais,nik,' . $id, // Validasi NIK 16 digit
+                'nama' => 'required|string|regex:/^[a-zA-Z\s]+$/|max:255', // Validasi nama hanya boleh huruf dan spasi
                 'tanggal_lahir' => 'required|date',
                 'alamat' => 'required|string',
                 'jabatans_id' => 'required|exists:jabatans,id',
                 'mulai_kerja' => 'required|date',
                 'lama_kerja' => 'required|integer|min:1|max:30',
-                'foto' => $request->hasFile('foto') ? 'image|mimes:jpeg,png,jpg|max:2048' : '', // Validasi foto jika ada
-            ], [
-                'required' => ':attribute wajib diisi.',
-                'unique' => ':attribute sudah terdaftar.',
-                'exists' => ':attribute tidak valid.',
-                'date' => ':attribute harus berupa tanggal yang valid.',
-                'integer' => ':attribute harus berupa angka.',
-                'min' => ':attribute minimal :min.',
-                'max' => ':attribute maksimal :max.',
-                'image' => ':attribute harus berupa gambar.',
-                'mimes' => ':attribute harus berformat jpeg, png, atau jpg.',
-                'foto.max' => 'Ukuran foto tidak boleh lebih dari 2MB.',
+                'foto' => $request->hasFile('foto') ? 'image|mimes:jpeg,png,jpg|max:2048' : '',
             ]);
+            
 
             $pegawai->nik = $request->nik;
             $pegawai->nama = $request->nama;
@@ -188,51 +165,74 @@ private function generateUniqueUsername($nama, $nik)
             $pegawai->lama_kerja = $request->lama_kerja;
 
             // Hitung selesai kerja
-            $mulaiKerja = \Carbon\Carbon::parse($request->mulai_kerja);
+            $mulaiKerja = Carbon::parse($request->mulai_kerja);
             $pegawai->selesai_kerja = $mulaiKerja->addYears((int) $request->lama_kerja)->format('Y-m-d');
 
             // Simpan foto jika ada perubahan
-                if ($request->hasFile('foto')) {
-                    $fotoPath = $request->file('foto')->store('uploads', 'public');
-                    $pegawai->foto = $fotoPath;
-                }
+            if ($request->hasFile('foto')) {
+                $fotoPath = $request->file('foto')->store('uploads', 'public');
+                $pegawai->foto = $fotoPath;
+            }
 
             $pegawai->save();
+
+            // Commit transaksi
+            DB::commit();
 
             return redirect()
                 ->route('pegawai.data.index')
                 ->with('success', 'Data pegawai berhasil diperbarui.');
-        } catch (ValidationException $e) {
-            return redirect()
-                ->back()
-                ->withErrors($e->validator)
-                ->withInput()
-                ->with('error', 'Form Data Update Harus Terisi Semua. Silakan periksa kembali data yang diupdate.');
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
+            // Rollback transaksi jika ada error
+            DB::rollBack();
+            Log::error('Error: ' . $e->getMessage());
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', 'Terjadi kesalahan saat memperbarui data: ' . $e->getMessage());
+                ->with('error', "Terjadi kesalahan: " . $e->getMessage());
         }
     }
 
-
     public function show($id)
     {
-        $pegawai = Pegawai::findOrFail($id); // Ambil data pegawai berdasarkan ID
-        return view('pages.viewpegawai', compact('pegawai')); // Return ke view detail pegawai
+        $pegawai = Pegawai::findOrFail($id);
+        return view('pages.viewpegawai', compact('pegawai'));
     }
-
 
     public function destroy($id)
     {
+        // Mulai transaksi
+        DB::beginTransaction();
+
         try {
             $pegawai = Pegawai::findOrFail($id);
+
+            // Delete related user account
+            if ($user = User::where('pegawai_id', $pegawai->id)->first()) {
+                // Delete related pelatihan data first
+                Pelatihan::where('user_id', $user->id)->delete();
+                
+                // Then delete the user
+                $user->delete();
+            }
+
+            // Finally delete the pegawai
             $pegawai->delete();
 
-            return redirect()->route('pegawai.data.index')->with('success', 'Pegawai berhasil dihapus.');
-        } catch (\Exception $e) {
-            return redirect()->route('pegawai.data.index')->with('error', 'Gagal menghapus data: ' . $e->getMessage());
+            // Commit transaksi
+            DB::commit();
+
+            return redirect()
+                ->route('pegawai.data.index')
+                ->with('success', 'Pegawai dan data terkait berhasil dihapus.');
+        } catch (Exception $e) {
+            // Rollback transaksi jika ada error
+            DB::rollBack();
+            Log::error('Error: ' . $e->getMessage());
+            return redirect()
+                ->route('pegawai.data.index')
+                ->with('error', 'Terjadi kesalahan saat menghapus data.');
         }
     }
 }

@@ -24,13 +24,29 @@ class User extends Authenticatable
     ];
 
     protected static function boot()
-{
+    {
     parent::boot();
 
     static::creating(function ($user) {
         $user->username = static::generateUniqueUsername($user->name);
     });
+    }
+
+    public function pegawai()
+    {
+        return $this->belongsTo(User::class, 'pegawai_id');
+    }
+
+    public function verifier()
+    {
+        return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    public function pelatihan()
+{
+    return $this->hasMany(Pelatihan::class, 'pegawai_id'); // Sesuaikan dengan foreign key yang digunakan
 }
+
 
 public static function generateUniqueUsername($namaUser) {
     // Hapus spasi dan karakter khusus
@@ -78,6 +94,8 @@ public static function generateUniqueUsername($namaUser) {
         return $this->role === $role; // Assuming you have a 'role' column in your users table
     }
 
-    
+    public function pegawaiS () {
+        return $this->belongsTo(Pegawai::class);
+    }
     
 }

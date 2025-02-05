@@ -13,16 +13,16 @@ class ImportPegawaiController extends Controller
     public function importExcel(Request $request)
     {
         Log::info('Starting file upload process...');
-
         Log::info('Request details:', $request->all());
 
-        // Perbaikan: Ubah 'file' menjadi 'excel_file'
-        if (!$request->hasFile('excel_file')) {
+        // Ubah pengecekan ke 'file' sesuai dengan name di form
+        if (!$request->hasFile('file')) {
             Log::error('No file uploaded.');
             return response()->json(['error' => 'No file uploaded.'], 422);
         }
         
-        $file = $request->file('excel_file');
+        // Ubah variabel ke 'file'
+        $file = $request->file('file');
 
         Log::info('File details:', [
             'name' => $file->getClientOriginalName(),
@@ -48,7 +48,13 @@ class ImportPegawaiController extends Controller
 
             DB::commit();
             Log::info("Data import successful! Rows imported: $rowsImported");
+            
+            // Ubah return untuk menangani both ajax dan normal submit
+            if ($request->ajax()) {
+                return response()->json(['success' => 'Data berhasil diimpor.']);
+            }
             return back()->with('success', 'Data berhasil diimpor.');
+            
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Error importing data: ' . $e->getMessage(), [
@@ -57,7 +63,11 @@ class ImportPegawaiController extends Controller
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return response()->json(['error' => 'Error importing data: ' . $e->getMessage()], 500);
+            
+            if ($request->ajax()) {
+                return response()->json(['error' => 'Error importing data: ' . $e->getMessage()], 500);
+            }
+            return back()->with('error', 'Error importing data: ' . $e->getMessage());
         }
     }
 }

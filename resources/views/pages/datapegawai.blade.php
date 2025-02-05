@@ -1,6 +1,12 @@
 @extends('layout.app')
 
 @section('contents')
+@if(session('error'))
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
+@endif
+
     <div class="container mt-4">
         <h4>Data Pegawai</h4>
 
@@ -28,8 +34,17 @@
         @endif
 
         @if (session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    html: "{{ session('success') }}",
+                    confirmButtonText: 'OK'
+                });
+            });
+        </script>
+    @endif
 
         <table class="table table-bordered">
             <thead>
@@ -45,8 +60,8 @@
             </thead>
             <tbody>
                 @foreach ($pegawais as $index => $pegawai)
-                    <tr class="text-center"> <!-- Tambahkan class text-center -->
-                        <td>{{ $index + 1 }}</td>
+                    <tr> <!-- Tambahkan class text-center -->
+                        <td>{{ $pegawais->perPage() * ($pegawais->currentPage() - 1) + $loop->iteration }}</td>
                         <td>
                             <img src="{{ asset('storage/' . $pegawai->foto) }}" alt="Foto Pegawai"
                                  style="width: 80px; height: 80px; object-fit: cover; border-radius: 5px;">
@@ -71,6 +86,9 @@
             </tbody>
             
         </table>
+        <div class="mt-3">
+            {{$pegawais->links()}}
+        </div>
     </div>
 
     <!-- Modal Import Data -->
@@ -106,6 +124,16 @@
         </div>
     </div>
 </div>
+
+@push('styles')
+    <style>
+        /* Hapus ikon panah di pagination */
+        .pagination .page-item:first-child .page-link,
+        .pagination .page-item:last-child .page-link {
+            display: none;
+        }
+    </style>
+@endpush
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

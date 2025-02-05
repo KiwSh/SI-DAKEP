@@ -23,13 +23,6 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
     ];
 
-    protected $routeMiddleware = [
-        // Middleware lainnya
-        'role' => \App\Http\Middleware\RoleMiddleware::class,
-        'auto.logout' => \App\Http\Middleware\AutoLogout::class,
-    ];
-    
-
     /**
      * The application's route middleware groups.
      *
@@ -43,8 +36,7 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
-            // Tambahkan middleware AutoLogout
-            \App\Http\Middleware\AutoLogout::class,
+            \App\Http\Middleware\SessionTimeout::class,
         ],
 
         'api' => [

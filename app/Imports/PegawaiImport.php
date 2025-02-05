@@ -37,7 +37,7 @@ class PegawaiImport implements ToModel, WithHeadingRow
             'nama' => $row['nama'],
             'tanggal_lahir' => $tanggal_lahir,
             'alamat' => $row['alamat'],
-            'tb_jabatan_id' => $row['tb_jabatan_id'],
+            'jabatans_id' => $row['jabatans_id'],
             'mulai_kerja' => $mulai_kerja,
             'lama_kerja' => $row['lama_kerja'] ?? null,
             'selesai_kerja' => $selesai_kerja,

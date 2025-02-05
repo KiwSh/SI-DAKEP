@@ -17,12 +17,12 @@ class ExportPegawaiController extends Controller
     public function exportPage(Request $request)
     {
         // Mengambil data jabatan untuk filter
-        $tb_jabatan = DB::table('tb_jabatan')->get();
+        $jabatans = DB::table('jabatans')->get();
 
         // Membuat query untuk filter data pegawai
         $query = DB::table('pegawais')
-            ->leftJoin('tb_jabatan', 'pegawais.tb_jabatan_id', '=', 'tb_jabatan.id')
-            ->select('pegawais.*', 'tb_jabatan.nama_jabatan');
+            ->leftJoin('jabatans', 'pegawais.jabatans_id', '=', 'jabatans.id')
+            ->select('pegawais.*', 'jabatans.nama_jabatan');
 
         // Filter berdasarkan Nama / NIK
         if ($request->has('search') && $request->search) {
@@ -33,8 +33,8 @@ class ExportPegawaiController extends Controller
         }
 
         // Filter berdasarkan Jabatan
-        if ($request->has('jabatan') && $request->jabatan) {
-            $query->where('pegawais.tb_jabatan_id', $request->jabatan);
+        if ($request->has('jabatans') && $request->jabatan) {
+            $query->where('pegawais.jabatans_id', $request->jabatan);
         }
 
         // Filter berdasarkan Tanggal Mulai Kerja
@@ -50,7 +50,7 @@ class ExportPegawaiController extends Controller
         // Ambil data pegawai yang sudah difilter dengan pagination
         $pegawais = $query->paginate(10);
 
-        return view('export.page', compact('tb_jabatan', 'pegawais'));
+        return view('export.page', compact('jabatans', 'pegawais'));
     }
 
 

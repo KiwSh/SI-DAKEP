@@ -39,7 +39,7 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithEv
 
         // Filter berdasarkan Jabatan
         if ($this->jabatanId) {
-            $query->where('tb_jabatan_id', $this->jabatanId);
+            $query->where('jabatans_id', $this->jabatanId);
         }
 
         // Filter berdasarkan Tanggal Mulai Kerja
@@ -59,7 +59,15 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithEv
     public function headings(): array
     {
         return [
-            'NIK', 'Nama', 'Jabatan', 'Mulai Kerja', 'Foto'
+            'NIK', 
+            'Nama', 
+            'Jabatan', 
+            'Tanggal Lahir',
+            'Alamat',
+            'Mulai Kerja',
+            'Lama Kerja',
+            'Selesai Kerja', 
+            'Foto'
         ];
     }
 
@@ -69,7 +77,11 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithEv
             $pegawai->nik,
             $pegawai->nama,
             $pegawai->jabatan->nama_jabatan ?? '',
+            $pegawai->tanggal_lahir,
+            $pegawai->alamat,
             $pegawai->mulai_kerja,
+            $pegawai->lama_kerja . ' tahun',  // Tambahkan teks "tahun"
+            $pegawai->selesai_kerja,
             $pegawai->foto
         ];
     }
@@ -82,7 +94,7 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithEv
                 $row = 2;
 
                 // Style untuk header
-                $event->sheet->getStyle('A1:E1')->applyFromArray([
+                $event->sheet->getStyle('A1:I1')->applyFromArray([
                     'font' => ['bold' => true],
                     'alignment' => [
                         'horizontal' => Alignment::HORIZONTAL_CENTER,
@@ -95,7 +107,7 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithEv
                     $event->sheet->getRowDimension($row)->setRowHeight(100);
 
                     // Set alignment untuk semua sel di baris ini
-                    $event->sheet->getStyle('A' . $row . ':E' . $row)->applyFromArray([
+                    $event->sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
                         'alignment' => [
                             'horizontal' => Alignment::HORIZONTAL_CENTER,
                             'vertical' => Alignment::VERTICAL_CENTER
@@ -106,7 +118,7 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithEv
                 }
 
                 // Set lebar kolom foto
-                $event->sheet->getColumnDimension('E')->setWidth(30);
+                $event->sheet->getColumnDimension('I')->setWidth(30);
 
                 $row = 2; // Reset row counter untuk gambar
                 foreach ($pegawais as $pegawai) {
@@ -124,10 +136,10 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithEv
                                 $drawing->setPath($fullPath);
                                 $drawing->setHeight(90);
                                 $drawing->setWidth(90);
-                                $drawing->setCoordinates('E' . $row);
+                                $drawing->setCoordinates('I' . $row);
 
                                 // Hitung offset untuk centering
-                                $cellWidth = $event->sheet->getColumnDimension('E')->getWidth() * 7; // Approx pixel conversion
+                                $cellWidth = $event->sheet->getColumnDimension('I')->getWidth() * 7; // Approx pixel conversion
                                 $cellHeight = $event->sheet->getRowDimension($row)->getRowHeight();
                                 $offsetX = ($cellWidth - 90) / 2; // 90 adalah width gambar
                                 $offsetY = ($cellHeight - 90) / 2; // 90 adalah height gambar
@@ -138,7 +150,7 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithEv
                                 $drawing->setWorksheet($event->sheet->getDelegate());
 
                                 // Kosongkan nilai sel
-                                $event->sheet->setCellValue('E' . $row, '');
+                                $event->sheet->setCellValue('I' . $row, '');
                             } catch (\Exception $e) {
                                 \Log::error('Error adding image: ' . $e->getMessage());
                             }
@@ -148,13 +160,13 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithEv
                 }
 
                 // Auto-size untuk kolom lain
-                foreach (range('A', 'D') as $column) {
+                foreach (range('A', 'H') as $column) {
                     $event->sheet->getColumnDimension($column)->setAutoSize(true);
                 }
 
                 // Border untuk semua sel
                 $lastRow = $row - 1;
-                $event->sheet->getStyle('A1:E' . $lastRow)->applyFromArray([
+                $event->sheet->getStyle('A1:I' . $lastRow)->applyFromArray([
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,

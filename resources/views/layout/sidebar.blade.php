@@ -72,6 +72,24 @@
     </li>
 @endif
 
+@if (auth()->check() && auth()->user()->role == 'user')
+<li class="nav-item">
+    <a href="{{ route('pelatihan.index') }}" class="nav-link">
+        <i class="nav-icon fas fa-graduation-cap"></i>
+        <span>Pelatihan</span>
+    </a>
+</li>
+@endif
+
+@if (auth()->check() && auth()->user()->role == 'admin')
+<li class="nav-item">
+    <a href="{{ route('admin.pelatihan.index') }}" class="nav-link">
+        <i class="nav-icon fas fa-graduation-cap"></i>
+        <span>Verifikasi Pelatihan</span>
+    </a>
+</li>
+@endif
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         function confirmLogout() {
