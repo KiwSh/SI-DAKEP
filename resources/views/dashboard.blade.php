@@ -82,53 +82,62 @@
 </div>
 
 <!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Pie Chart 1 - Pegawai
     var ctxPegawai = document.getElementById('pegawaiChart').getContext('2d');
-    var jabatanData = @json($pegawaiPerJabatan);
-    var labels = jabatanData.map(item => item.nama_jabatan);
-    var data = jabatanData.map(item => item.total);
-    var colors = labels.map(() => {
-        var r = Math.floor(Math.random() * 255);
-        var g = Math.floor(Math.random() * 255);
-        var b = Math.floor(Math.random() * 255);
-        return `rgba(${r}, ${g}, ${b}, 0.7)`;
-    });
-    
-    new Chart(ctxPegawai, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: colors,
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        font: {
-                            size: 11
-                        }
-                    }
-                },
-                title: {
-                    display: true,
-                    text: 'Distribusi Pegawai per Jabatan',
+var jabatanData = @json($pegawaiPerJabatan);
+
+// Calculate total employees
+var totalPegawai = jabatanData.reduce((sum, item) => sum + item.total, 0);
+
+var labels = jabatanData.map(item => {
+    var percentage = ((item.total / totalPegawai) * 100).toFixed(1);
+    return `${item.nama_jabatan} (${percentage}%)`;
+});
+var data = jabatanData.map(item => item.total);
+var colors = labels.map(() => {
+    var r = Math.floor(Math.random() * 255);
+    var g = Math.floor(Math.random() * 255);
+    var b = Math.floor(Math.random() * 255);
+    return `rgba(${r}, ${g}, ${b}, 0.7)`;
+});
+
+new Chart(ctxPegawai, {
+    type: 'pie',
+    data: {
+        labels: labels,
+        datasets: [{
+            data: data,
+            backgroundColor: colors,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
                     font: {
-                        size: 12
+                        size: 11
                     }
+                }
+            },
+            title: {
+                display: true,
+                text: 'Distribusi Pegawai per Jabatan',
+                font: {
+                    size: 12
                 }
             }
         }
-    });
+    }
+});
 
     // Pie Chart 2 - Persentase Pelatihan
     var ctxPelatihanPenyelenggara = document.getElementById('pelatihanPenyelenggaraChart').getContext('2d');

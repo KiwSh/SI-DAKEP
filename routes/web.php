@@ -57,7 +57,6 @@ Route::put('/account/update', [AccountController::class, 'update'])->name('accou
 // Routes untuk user
 Route::middleware(['auth'])->group(function () {
     Route::resource('pelatihan', PelatihanController::class);
-    Route::get('/pelatihan/{id}', 'PelatihanController@show')->name('pelatihan.show');
 });
 
 // Routes untuk admin

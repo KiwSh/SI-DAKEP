@@ -10,7 +10,7 @@ class JabatanController extends Controller
     // Menampilkan halaman tambah jabatan
     public function index()
     {
-        $jabatans = Jabatan::all(); // Ambil semua data jabatan
+        $jabatans = Jabatan::paginate(5); // Ambil semua data jabatan
         return view('jabatan.index', compact('jabatans')); // Kirim ke view
     }
 
